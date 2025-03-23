@@ -416,14 +416,16 @@ class Matcher(object):
                     
                     emoji = "😐"
 
-                    if percentCommon > 20.0:
-                        emoji = "🙂"
-                    elif percentCommon > 50.0:
-                        emoji = "😍"
+                    if percentCommon > 80.0:
+                        emoji = "🤯"
                     elif percentCommon > 75.0:
                         emoji = "🤩"
-                    elif percentCommon > 80.0:
-                        emoji = "🤯"
+                    elif percentCommon > 50.0:
+                        emoji = "😍"
+                    if percentCommon > 20.0:
+                        emoji = "🙂"
+
+
 
                     msg = f"╠═══════ {emoji} {percentCommon:.2f}% [{ht.names[tophitid]}] "
 
