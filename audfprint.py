@@ -449,9 +449,7 @@ def main(argv):
         else:
             # Load existing hash table file (add, match, merge)
             if args['--verbose']:
-                report("\n")
-                report(f"╔ Reading {dbasename}")
-                report("║")
+                print(f"\n╔ Reading {dbasename}\n║")
             
                 # report([time.ctime() + " Reading hash table " + dbasename])
             hash_tab = hash_table.HashTable(dbasename)
