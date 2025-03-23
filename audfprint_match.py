@@ -422,7 +422,7 @@ class Matcher(object):
                         emoji = "🤩"
                     elif percentCommon > 50.0:
                         emoji = "😍"
-                    if percentCommon > 20.0:
+                    elif percentCommon > 20.0:
                         emoji = "🙂"
 
 
