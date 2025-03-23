@@ -450,6 +450,9 @@ def main(argv):
             # Load existing hash table file (add, match, merge)
             if args['--verbose']:
                 pass
+            
+                report(f"\n╔ Reading {dbasename}\n║")
+            
                 # report([time.ctime() + " Reading hash table " + dbasename])
             hash_tab = hash_table.HashTable(dbasename)
             if analyzer and 'samplerate' in hash_tab.params \

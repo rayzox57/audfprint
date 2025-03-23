@@ -370,8 +370,8 @@ class Matcher(object):
             else:
                 numberstring = ""
 
-            print(f"╠══ Results for [{filename}] :")
             print(f"║")
+            print(f"╠══ Results for [{filename}] :")
 
             # print(time.ctime(), "Analyzed", numberstring, filename, "of",
             #       ('%.3f' % durd), "s "
@@ -404,7 +404,7 @@ class Matcher(object):
             # else:
             #     msgrslt.append(qrymsg + "\t")
 
-            msgrslt.append(f"╠═══ ❌ No matches ....")
+            msgrslt.append(f"╠═══════ ❌ No matches ....")
 
         else:
             for (tophitid, nhashaligned, aligntime, nhashraw, rank,
@@ -413,6 +413,7 @@ class Matcher(object):
                 if self.verbose:
 
                     percentCommon = 100.0 * nhashaligned / nhashraw
+                    
                     emoji = "😐"
 
                     if percentCommon > 20.0:
@@ -424,7 +425,7 @@ class Matcher(object):
                     elif percentCommon > 80.0:
                         emoji = "🤯"
 
-                    msg = f"╠═══ {emoji} {percentCommon:.2f}% [{ht.names[tophitid]}] "
+                    msg = f"╠═══════ {emoji} {percentCommon:.2f}% [{ht.names[tophitid]}] "
 
                     if self.find_time_range:
 
