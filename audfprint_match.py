@@ -161,8 +161,8 @@ class Matcher(object):
         # matchhashes = sorted(list(set(matchhashes)))
         # much, much faster:
         matchix = np.nonzero(
-                np.logical_and(allids == id, np.less_equal(np.abs(alltimes - mode),
-                                                           self.window)))[0]
+            np.logical_and(allids == id, np.less_equal(np.abs(alltimes - mode),
+                                                       self.window)))[0]
         matchhasheshash = np.unique(allotimes[matchix]
                                     + (allhashes[matchix] << timebits))
         timemask = (1 << timebits) - 1
@@ -186,7 +186,8 @@ class Matcher(object):
             hits[:, 0] == id
         ]), 3]
         min_time = match_times[int(len(match_times) * self.time_quantile)]
-        max_time = match_times[int(len(match_times) * (1.0 - self.time_quantile)) - 1]
+        max_time = match_times[int(
+            len(match_times) * (1.0 - self.time_quantile)) - 1]
         # log("_calc_time_ranges: len(hits)={:d} id={:d} mode={:d} matches={:d} min={:d} max={:d}".format(
         #    len(hits), id, mode, np.sum(np.logical_and(hits[:, 1] >= minoffset,
         #                                               hits[:, 1] <= maxoffset)),
@@ -232,7 +233,7 @@ class Matcher(object):
                         results.resize((maxnresults, results.shape[1]))
                     if self.find_time_range:
                         min_time, max_time = self._calculate_time_ranges(
-                                sorted_hits, id, mode)
+                            sorted_hits, id, mode)
                     results[nresults, :] = [id, filtcount, mode, rawcount,
                                             urank, min_time, max_time]
                     nresults += 1
@@ -296,7 +297,7 @@ class Matcher(object):
                                          (mode + self.window + 1)])
                 if self.find_time_range:
                     min_time, max_time = self._calculate_time_ranges(
-                            sorted_hits, id, mode + mintime)
+                        sorted_hits, id, mode + mintime)
                 results[nresults, :] = [id, count, mode + mintime, rawcount,
                                         urank, min_time, max_time]
                 nresults += 1
@@ -368,9 +369,13 @@ class Matcher(object):
                 numberstring = "#%d" % number
             else:
                 numberstring = ""
-            print(time.ctime(), "Analyzed", numberstring, filename, "of",
-                  ('%.3f' % durd), "s "
-                                   "to", len(q_hashes), "hashes")
+
+            print(f"╠══ Results for [{filename}] :")
+            print(f"║")
+
+            # print(time.ctime(), "Analyzed", numberstring, filename, "of",
+            #       ('%.3f' % durd), "s "
+            #                        "to", len(q_hashes), "hashes")
         # Run query
         rslts = self.match_hashes(ht, q_hashes)
         # Post filtering
@@ -384,34 +389,60 @@ class Matcher(object):
         rslts, dur, nhash = self.match_file(analyzer, ht, qry, number)
         t_hop = analyzer.n_hop / analyzer.target_sr
         if self.verbose:
-            qrymsg = qry + (' %.1f ' % dur) + "sec " + str(nhash) + " raw hashes"
+            qrymsg = qry + (' %.1f ' % dur) + "sec " + \
+                str(nhash) + " raw hashes"
         else:
             qrymsg = qry
 
         msgrslt = []
         if len(rslts) == 0:
+            pass
             # No matches returned at all
-            nhashaligned = 0
-            if self.verbose:
-                msgrslt.append("NOMATCH " + qrymsg)
-            else:
-                msgrslt.append(qrymsg + "\t")
+            # nhashaligned = 0
+            # if self.verbose:
+            #     msgrslt.append("NOMATCH " + qrymsg)
+            # else:
+            #     msgrslt.append(qrymsg + "\t")
+
+            msgrslt.append(f"╠═══ ❌ No matches ....")
+
         else:
             for (tophitid, nhashaligned, aligntime, nhashraw, rank,
                  min_time, max_time) in rslts:
                 # figure the number of raw and aligned matches for top hit
                 if self.verbose:
+
+                    percentCommon = 100.0 * nhashaligned / nhashraw
+                    emoji = "😐"
+
+                    if percentCommon > 20.0:
+                        emoji = "🙂"
+                    elif percentCommon > 50.0:
+                        emoji = "😍"
+                    elif percentCommon > 75.0:
+                        emoji = "🤩"
+                    elif percentCommon > 80.0:
+                        emoji = "🤯"
+
+                    msg = f"╠═══ {emoji} {percentCommon:.2f}% [{ht.names[tophitid]}] "
+
                     if self.find_time_range:
-                        msg = ("Matched {:6.1f} s starting at {:6.1f} s in {:s}"
-                               " to time {:6.1f} s in {:s}").format(
-                                (max_time - min_time) * t_hop, min_time * t_hop, qry,
-                                (min_time + aligntime) * t_hop, ht.names[tophitid])
+
+                        msg += f" || Start: {min_time:.2f} End: {max_time:.2f} "
+
+                        # msg = ("Matched {:6.1f} s starting at {:6.1f} s in {:s}"
+                        #        " to time {:6.1f} s in {:s}").format(
+                        #         (max_time - min_time) * t_hop, min_time * t_hop, qry,
+                        #         (min_time + aligntime) * t_hop, ht.names[tophitid])
                     else:
-                        msg = "Matched {:s} as {:s} at {:6.1f} s".format(
-                                qrymsg, ht.names[tophitid], aligntime * t_hop)
-                    msg += (" with {:5d} of {:5d} common hashes"
-                            " at rank {:2d}").format(
-                            nhashaligned, nhashraw, rank)
+
+                        msg += f" || Offset: {aligntime:.2f} "
+
+                        # msg = "Matched {:s} as {:s} at {:6.1f} s".format(
+                        #         qrymsg, ht.names[tophitid], aligntime * t_hop)
+                    # msg += (" with {:5d} of {:5d} common hashes"
+                    #         " at rank {:2d}").format(
+                    #         nhashaligned, nhashraw, rank)
                     msgrslt.append(msg)
                 else:
                     msgrslt.append(qrymsg + "\t" + ht.names[tophitid])
@@ -424,7 +455,8 @@ class Matcher(object):
             plotted over a spectrogram """
         # Make the spectrogram
         # d, sr = librosa.load(filename, sr=analyzer.target_sr)
-        d, sr = audio_read.audio_read(filename, sr=analyzer.target_sr, channels=1)
+        d, sr = audio_read.audio_read(
+            filename, sr=analyzer.target_sr, channels=1)
         sgram = np.abs(stft.stft(d, n_fft=analyzer.n_fft,
                                  hop_length=analyzer.n_hop,
                                  window=np.hanning(analyzer.n_fft + 2)[1:-1]))

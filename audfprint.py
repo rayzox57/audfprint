@@ -162,12 +162,14 @@ def do_cmd(cmd, analyzer, hash_tab, filename_iter, matcher, outdir, type, report
     elif cmd == 'precompute':
         # just precompute fingerprints, single core
         for filename in filename_iter:
-            report(file_precompute(analyzer, filename, outdir, type, skip_existing=skip_existing, strip_prefix=strip_prefix))
+            report(file_precompute(analyzer, filename, outdir, type,
+                   skip_existing=skip_existing, strip_prefix=strip_prefix))
 
     elif cmd == 'match':
         # Running query, single-core mode
         for num, filename in enumerate(filename_iter):
-            msgs = matcher.file_match_to_msgs(analyzer, hash_tab, filename, num)
+            msgs = matcher.file_match_to_msgs(
+                analyzer, hash_tab, filename, num)
             report(msgs)
 
     elif cmd == 'new' or cmd == 'add':
@@ -247,8 +249,9 @@ def do_cmd_multiproc(cmd, analyzer, hash_tab, filename_iter, matcher,
     if cmd == 'precompute':
         # precompute fingerprints with joblib
         msgslist = joblib.Parallel(n_jobs=ncores)(
-                joblib.delayed(file_precompute)(analyzer, file, outdir, type, skip_existing, strip_prefix=strip_prefix)
-                for file in filename_iter
+            joblib.delayed(file_precompute)(analyzer, file, outdir,
+                                            type, skip_existing, strip_prefix=strip_prefix)
+            for file in filename_iter
         )
         # Collapse into a single list of messages
         for msgs in msgslist:
@@ -257,11 +260,11 @@ def do_cmd_multiproc(cmd, analyzer, hash_tab, filename_iter, matcher,
     elif cmd == 'match':
         # Running queries in parallel
         msgslist = joblib.Parallel(n_jobs=ncores)(
-                # Would use matcher.file_match_to_msgs(), but you
-                # can't use joblib on an instance method
-                joblib.delayed(matcher_file_match_to_msgs)(matcher, analyzer,
-                                                           hash_tab, filename)
-                for filename in filename_iter
+            # Would use matcher.file_match_to_msgs(), but you
+            # can't use joblib on an instance method
+            joblib.delayed(matcher_file_match_to_msgs)(matcher, analyzer,
+                                                       hash_tab, filename)
+            for filename in filename_iter
         )
         for msgs in msgslist:
             report(msgs)
@@ -419,8 +422,8 @@ def main(argv):
 
     # Setup the analyzer if we're using one (i.e., unless "merge")
     analyzer = setup_analyzer(args) if not (
-            cmd == "merge" or cmd == "newmerge"
-            or cmd == "list" or cmd == "remove") else None
+        cmd == "merge" or cmd == "newmerge"
+        or cmd == "list" or cmd == "remove") else None
 
     precomp_type = 'hashes'
 
@@ -436,9 +439,9 @@ def main(argv):
             ensure_dir(os.path.split(dbasename)[0])
             # Create a new hash table
             hash_tab = hash_table.HashTable(
-                    hashbits=int(args['--hashbits']),
-                    depth=int(args['--bucketsize']),
-                    maxtime=(1 << int(args['--maxtimebits'])))
+                hashbits=int(args['--hashbits']),
+                depth=int(args['--bucketsize']),
+                maxtime=(1 << int(args['--maxtimebits'])))
             # Set its samplerate param
             if analyzer:
                 hash_tab.params['samplerate'] = analyzer.target_sr
@@ -446,7 +449,8 @@ def main(argv):
         else:
             # Load existing hash table file (add, match, merge)
             if args['--verbose']:
-                report([time.ctime() + " Reading hash table " + dbasename])
+                pass
+                # report([time.ctime() + " Reading hash table " + dbasename])
             hash_tab = hash_table.HashTable(dbasename)
             if analyzer and 'samplerate' in hash_tab.params \
                     and hash_tab.params['samplerate'] != analyzer.target_sr:
@@ -463,7 +467,7 @@ def main(argv):
     matcher = setup_matcher(args) if cmd == 'match' else None
 
     filename_iter = filename_list_iterator(
-            args['<file>'], args['--wavdir'], args['--wavext'], args['--list'])
+        args['<file>'], args['--wavdir'], args['--wavext'], args['--list'])
 
     #######################
     # Run the main commmand
@@ -489,7 +493,7 @@ def main(argv):
     elapsedtime = time_clock() - initticks
     if analyzer and analyzer.soundfiletotaldur > 0.:
         print("Processed "
-              + "%d files (%.1f s total dur) in %.1f s sec = %.3f x RT" \
+              + "%d files (%.1f s total dur) in %.1f s sec = %.3f x RT"
               % (analyzer.soundfilecount, analyzer.soundfiletotaldur,
                  elapsedtime, (elapsedtime / analyzer.soundfiletotaldur)))
 

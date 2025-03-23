@@ -206,9 +206,18 @@ class HashTable(object):
         nhashes = sum(self.counts)
         # Report the proportion of dropped hashes (overfull table)
         dropped = nhashes - sum(np.minimum(self.depth, self.counts))
-        print("Read fprints for", sum(n is not None for n in self.names),
-              "files (", nhashes, "hashes) from", name,
-              "(%.2f%% dropped)" % (100.0 * dropped / max(1, nhashes)))
+
+        files_count = sum(n is not None for n in self.names)
+        drop_percent = 100.0 * dropped / max(1, nhashes)
+
+        print(f"╠═ [{files_count} files]")
+        print(f"╠═ [{nhashes} hashes]")
+        print(f"╠═ [{drop_percent:.2f}% drop]")
+        print(f"║")
+
+        # print("Read fprints for", sum(n is not None for n in self.names),
+        #       "files (", nhashes, "hashes) from", name,
+        #       "(%.2f%% dropped)" % (100.0 * dropped / max(1, nhashes)))
 
     def load_pkl(self, name, file_object=None):
         """ Read hash table values from pickle file <name>. """
@@ -235,7 +244,7 @@ class HashTable(object):
                   "in compatibility mode.")
             # Offset all the nonzero bins with one ID count.
             temp.table += np.array(1 << self.maxtimebits).astype(np.uint32) * (
-                    temp.table != 0)
+                temp.table != 0)
             temp.ht_version = HT_VERSION
         self.table = temp.table
         self.ht_version = temp.ht_version
@@ -277,7 +286,8 @@ class HashTable(object):
         self.counts = mht['HashTableCounts'][0]
         self.names = [str(val[0]) if len(val) > 0 else []
                       for val in mht['HashTableNames'][0]]
-        self.hashesperid = np.array(mht['HashTableLengths'][0]).astype(np.uint32)
+        self.hashesperid = np.array(
+            mht['HashTableLengths'][0]).astype(np.uint32)
         # Matlab uses 1-origin for the IDs in the hashes, but the Python code
         # also skips using id_ 0, so that names[0] corresponds to id_ 1.
         # Otherwise unmodified database
@@ -368,14 +378,14 @@ class HashTable(object):
         id_ = self.name_to_id(name)
         maxtimemask = (1 << self.maxtimebits) - 1
         num_hashes_per_hash = np.sum(
-                (self.table >> self.maxtimebits) == (id_ + 1), axis=1)
+            (self.table >> self.maxtimebits) == (id_ + 1), axis=1)
         hashes_containing_id = np.nonzero(num_hashes_per_hash)[0]
         timehashpairs = np.zeros((sum(num_hashes_per_hash), 2), dtype=np.int32)
         hashes_so_far = 0
         for hash_ in hashes_containing_id:
             entries = self.table[hash_, :self.counts[hash_]]
             matching_entries = np.nonzero(
-                    (entries >> self.maxtimebits) == (id_ + 1))[0]
+                (entries >> self.maxtimebits) == (id_ + 1))[0]
             times = (entries[matching_entries] & maxtimemask)
             timehashpairs[hashes_so_far: hashes_so_far + len(times), 0] = times
             timehashpairs[hashes_so_far: hashes_so_far + len(times), 1] = hash_
