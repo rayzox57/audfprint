@@ -187,53 +187,6 @@ class MatcherResults(object):
 
         return res
 
-    def export_txt(self, save_to_file=True, path=""):
-
-        txt_results = ""
-        sorted_results = sorted(self.results.values(),
-                                key=lambda x: x.percent, reverse=True)
-
-        for r in sorted_results:
-            txt_results += f"{r}\n"
-
-        if save_to_file and os.path.exists(path):
-            unix = int(time.time())
-            filename = f"match_results_{unix}.txt"
-            with open(path + filename, 'w') as f:
-                f.write(txt_results)
-
-        return txt_results
-
-    def send_discord(self, webhook_id, webhook_token):
-        from datetime import datetime
-
-        # Prepare content with current date and time
-        current_date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        content = f"# Results from {current_date_time} !\n## Files :\n"
-
-        # List of all different tracks
-        tracks = []
-        for k, v in self.results.items():
-            if v.track not in tracks:
-                tracks.append(v.track)
-
-        # Add track names to content
-        for track in tracks:
-            content += f"> - {track}\n"
-
-        # Add results for each track
-        content += "## Results :\n"
-        for track in tracks:
-            content += f"### {track}\n"
-            for k, v in self.results.items():
-                if v.track == track:
-                    content += f"``` {v}```\n"
-
-        # Create and send the webhook
-        webhook = DiscordWebhook(
-            url=f"https://discord.com/api/webhooks/{webhook_id}/{webhook_token}", content=content, embeds=None, attachments=[])
-        webhook.execute()
-
 
 class Matcher(object):
     """Provide matching for audfprint fingerprint queries to hash table"""

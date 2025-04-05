@@ -452,10 +452,8 @@ def main(argv):
         else:
             # Load existing hash table file (add, match, merge)
             if args['--verbose']:
-                if not args['--colab']:
-                    report([time.ctime() + " Reading hash table " + dbasename])
-                hash_tab = hash_table.HashTable(
-                    dbasename, quiet=args['--colab'])
+                report([time.ctime() + " Reading hash table " + dbasename])
+            hash_tab = hash_table.HashTable(dbasename)
             if analyzer and 'samplerate' in hash_tab.params \
                     and hash_tab.params['samplerate'] != analyzer.target_sr:
                 # analyzer.target_sr = hash_tab.params['samplerate']
@@ -496,13 +494,10 @@ def main(argv):
 
     elapsedtime = time_clock() - initticks
     if analyzer and analyzer.soundfiletotaldur > 0.:
-
-        # check if colab is specified
-        if (not args['--colab']):
-            print("Processed "
-                  + "%d files (%.1f s total dur) in %.1f s sec = %.3f x RT"
-                  % (analyzer.soundfilecount, analyzer.soundfiletotaldur,
-                     elapsedtime, (elapsedtime / analyzer.soundfiletotaldur)))
+        print("Processed "
+              + "%d files (%.1f s total dur) in %.1f s sec = %.3f x RT"
+              % (analyzer.soundfilecount, analyzer.soundfiletotaldur,
+                 elapsedtime, (elapsedtime / analyzer.soundfiletotaldur)))
 
     # Save the hash table file if it has been modified
     if hash_tab and hash_tab.dirty:
