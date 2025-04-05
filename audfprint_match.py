@@ -7,6 +7,7 @@ Fingerprint matching code for audfprint
 2014-05-26 Dan Ellis dpwe@ee.columbia.edu
 """
 from __future__ import division, print_function
+import base64
 import os
 import time
 
@@ -90,6 +91,101 @@ def find_modes(data, threshold=5, window=0):
     return localmaxes + datamin, fullvector[localmaxes]
 
 
+class MatcherResult(object):
+
+    def __init__(self, dbasename_filename, track, match, timecode, hashcommon, hashtotal, rank):
+        self.dbasename_filename = dbasename_filename
+        self.track = track
+        self.track_filename = os.path.basename(track)
+        self.timecode = timecode
+        self.hashcommon = hashcommon
+        self.hashcommonStr = hashcommon
+        self.hashtotal = hashtotal
+        self.hashtotalStr = hashtotal
+        self.match = match
+        self.match_filename = os.path.basename(match)
+        self.count = 1
+        self.countStr = 1
+        self.rank = rank
+        self.setPercent(hashcommon, hashtotal)
+
+    def isBetter(self, hashcommon, hashtotal):
+        return ((hashcommon / hashtotal) * 100) > self.percent
+
+    def setPercent(self, hashcommon, hashtotal):
+        self.percent = float("{:.2f}".format((hashcommon / hashtotal) * 100))
+        self.percentStr = str(self.percent)
+
+    def __repr__(self):
+        return f"[ {self.dbasename_filename} ] [ {self.percentStr}% | {self.count}x | {self.hashcommonStr} / {self.hashtotalStr} | {self.rank} | {self.timecode} ] [ {self.track_filename} | {self.match_filename} ]"
+
+
+class MatcherResults(object):
+
+    def __init__(self) -> None:
+        self.results = {}
+
+    @staticmethod
+    def encodingId(track, match) -> str:
+        track = base64.b64encode(track.encode()).decode()
+        match = base64.b64encode(match.encode()).decode()
+        return f"{track}{match}"
+
+    def add(self, dbasename_filename, track, match, timecode, hashcommon, hashtotal, rank) -> MatcherResult:
+        instance_id = MatcherResults.encodingId(track, match)
+        instance = self.results.get(instance_id)
+
+        if type(instance) == MatcherResult:
+            instance.count += 1
+            if instance.isBetter(hashcommon, hashtotal):
+                instance.timecode = timecode
+                instance.match = match
+                instance.hashcommon = hashcommon
+                instance.hashtotal = hashtotal
+                instance.rank = rank
+                instance.setPercent(hashcommon, hashtotal)
+        else:
+            self.results[instance_id] = MatcherResult(dbasename_filename,
+                                                      track, match, timecode, hashcommon, hashtotal, rank)
+
+        return self.results[instance_id]
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the MatcherResults
+        """
+        biggest_hash_common = 0
+        biggest_hash_total = 0
+        biggest_count = 0
+        biggest_percent = 0
+
+        for k, v in self.results.items():
+            if v.hashcommon > biggest_hash_common:
+                biggest_hash_common = v.hashcommon
+            if v.hashtotal > biggest_hash_total:
+                biggest_hash_total = v.hashtotal
+            if v.count > biggest_count:
+                biggest_count = v.count
+            if v.percent > biggest_percent:
+                biggest_percent = v.percent
+
+        hash_common_length = len(str(biggest_hash_common))
+        hash_total_length = len(str(biggest_hash_total))
+        count_length = len(str(biggest_count))
+        percent_length = len(str(biggest_percent))
+
+        res = ""
+        for k, v in self.results.items():
+            # reajust all values to be the same length (with zero padding)
+            v.hashcommonStr = str(v.hashcommon).rjust(hash_common_length, "0")
+            v.hashtotalStr = str(v.hashtotal).rjust(hash_total_length, "0")
+            v.countStr = str(v.count).rjust(count_length, "0")
+            v.percentStr = str(v.percent).rjust(percent_length, "0")
+            res += f"{v}\n"
+
+        return res
+
+
 class Matcher(object):
     """Provide matching for audfprint fingerprint queries to hash table"""
 
@@ -120,6 +216,8 @@ class Matcher(object):
         # If there are a lot of matches within a single track at different
         # alignments, stop looking after a while.
         self.max_alignments_per_id = 100
+        # Results
+        self.results: MatcherResults = MatcherResults()
 
     def _best_count_ids(self, hits, ht):
         """ Return the indexes for the ids with the best counts.
@@ -369,10 +467,6 @@ class Matcher(object):
                 numberstring = "#%d" % number
             else:
                 numberstring = ""
-
-            print(f"║")
-            print(f"╠══ Results for [{filename}] :")
-
             # print(time.ctime(), "Analyzed", numberstring, filename, "of",
             #       ('%.3f' % durd), "s "
             #                        "to", len(q_hashes), "hashes")
@@ -383,72 +477,69 @@ class Matcher(object):
             rslts = rslts[(-rslts[:, 2]).argsort(), :]
         return rslts[:self.max_returns, :], durd, len(q_hashes)
 
-    def file_match_to_msgs(self, analyzer, ht, qry, number=None):
-        """ Perform a match on a single input file, return list
-            of message strings """
-        rslts, dur, nhash = self.match_file(analyzer, ht, qry, number)
+    # def file_match_to_msgs(self, analyzer, ht, qry, number=None):
+    #     """ Perform a match on a single input file, return list
+    #         of message strings """
+    #     rslts, dur, nhash = self.match_file(analyzer, ht, qry, number)
+    #     t_hop = analyzer.n_hop / analyzer.target_sr
+    #     if self.verbose:
+    #         qrymsg = qry + (' %.1f ' % dur) + "sec " + \
+    #             str(nhash) + " raw hashes"
+    #     else:
+    #         qrymsg = qry
+
+    #     msgrslt = []
+    #     if len(rslts) == 0:
+    #         # No matches returned at all
+    #         nhashaligned = 0
+    #         if self.verbose:
+    #             msgrslt.append("NOMATCH " + qrymsg)
+    #         else:
+    #             msgrslt.append(qrymsg + "\t")
+    #     else:
+    #         for (tophitid, nhashaligned, aligntime, nhashraw, rank,
+    #              min_time, max_time) in rslts:
+    #             # figure the number of raw and aligned matches for top hit
+    #             if self.verbose:
+    #                 if self.find_time_range:
+    #                     msg = ("Matched {:6.1f} s starting at {:6.1f} s in {:s}"
+    #                            " to time {:6.1f} s in {:s}").format(
+    #                         (max_time - min_time) *
+    #                         t_hop, min_time * t_hop, qry,
+    #                         (min_time + aligntime) * t_hop, ht.names[tophitid])
+
+    #                 else:
+    #                     msg = "Matched {:s} as {:s} at {:6.1f} s".format(
+    #                         qrymsg, ht.names[tophitid], aligntime * t_hop)
+    #                 msg += (" with {:5d} of {:5d} common hashes"
+    #                         " at rank {:2d}").format(
+    #                     nhashaligned, nhashraw, rank)
+    #                 msgrslt.append(msg)
+    #             else:
+    #                 msgrslt.append(qrymsg + "\t" + ht.names[tophitid])
+    #             if self.illustrate:
+    #                 self.illustrate_match(analyzer, ht, qry)
+    #     return msgrslt
+
+    def file_match_to_msgs(self, analyzer, ht, qry, number=None, dbasename=None):
+        dbasename_filename = os.path.basename(dbasename)
+        rslts, _, _ = self.match_file(analyzer, ht, qry, number)
         t_hop = analyzer.n_hop / analyzer.target_sr
-        if self.verbose:
-            qrymsg = qry + (' %.1f ' % dur) + "sec " + \
-                str(nhash) + " raw hashes"
-        else:
-            qrymsg = qry
 
         msgrslt = []
-        if len(rslts) == 0:
-            pass
-            # No matches returned at all
-            # nhashaligned = 0
-            # if self.verbose:
-            #     msgrslt.append("NOMATCH " + qrymsg)
-            # else:
-            #     msgrslt.append(qrymsg + "\t")
+        if len(rslts) != 0:
+            for rank, (tophitid, nhashaligned, aligntime, nhashraw, _, _, _) in enumerate(rslts):
+                # Add the match to the results system
+                self.results.add(
+                    dbasename_filename,
+                    track=qry,
+                    match=ht.names[tophitid],
+                    timecode=aligntime * t_hop,
+                    hashcommon=nhashaligned,
+                    hashtotal=nhashraw,
+                    rank=rank
+                )
 
-            msgrslt.append(f"╠═══════ ❌ No matches ....")
-
-        else:
-            for (tophitid, nhashaligned, aligntime, nhashraw, rank,
-                 min_time, max_time) in rslts:
-                # figure the number of raw and aligned matches for top hit
-                if self.verbose:
-
-                    percentCommon = 100.0 * nhashaligned / nhashraw
-                    
-                    emoji = "😐"
-
-                    if percentCommon > 80.0:
-                        emoji = "🤯"
-                    elif percentCommon > 75.0:
-                        emoji = "🤩"
-                    elif percentCommon > 50.0:
-                        emoji = "😍"
-                    elif percentCommon > 20.0:
-                        emoji = "🙂"
-
-
-
-                    msg = f"╠═══════ {emoji} {percentCommon:.2f}% [{ht.names[tophitid]}] "
-
-                    if self.find_time_range:
-
-                        msg += f" || Start: {min_time:.2f} End: {max_time:.2f} "
-
-                        # msg = ("Matched {:6.1f} s starting at {:6.1f} s in {:s}"
-                        #        " to time {:6.1f} s in {:s}").format(
-                        #         (max_time - min_time) * t_hop, min_time * t_hop, qry,
-                        #         (min_time + aligntime) * t_hop, ht.names[tophitid])
-                    else:
-
-                        msg += f" || Offset: {aligntime:.2f} "
-
-                        # msg = "Matched {:s} as {:s} at {:6.1f} s".format(
-                        #         qrymsg, ht.names[tophitid], aligntime * t_hop)
-                    # msg += (" with {:5d} of {:5d} common hashes"
-                    #         " at rank {:2d}").format(
-                    #         nhashaligned, nhashraw, rank)
-                    msgrslt.append(msg)
-                else:
-                    msgrslt.append(qrymsg + "\t" + ht.names[tophitid])
                 if self.illustrate:
                     self.illustrate_match(analyzer, ht, qry)
         return msgrslt

@@ -144,7 +144,7 @@ def make_ht_from_list(analyzer, filelist, hashbits, depth, maxtime, pipe=None):
         return ht
 
 
-def do_cmd(cmd, analyzer, hash_tab, filename_iter, matcher, outdir, type, report, skip_existing=False, strip_prefix=None):
+def do_cmd(cmd, analyzer, hash_tab, filename_iter, matcher, outdir, type, report, skip_existing=False, strip_prefix=None, dbasename=None):
     """ Breaks out the core part of running the command.
         This is just the single-core versions.
     """
@@ -168,9 +168,11 @@ def do_cmd(cmd, analyzer, hash_tab, filename_iter, matcher, outdir, type, report
     elif cmd == 'match':
         # Running query, single-core mode
         for num, filename in enumerate(filename_iter):
-            msgs = matcher.file_match_to_msgs(
-                analyzer, hash_tab, filename, num)
-            report(msgs)
+            matcher.file_match_to_msgs(
+                analyzer, hash_tab, filename, num, dbasename=dbasename)
+            # show results
+            results: audfprint_match.MatcherResults = matcher.results
+            print(f"\n{str(results)}")
 
     elif cmd == 'new' or cmd == 'add':
         # Adding files
@@ -449,9 +451,7 @@ def main(argv):
         else:
             # Load existing hash table file (add, match, merge)
             if args['--verbose']:
-                print(f"\n╔ Reading {dbasename}\n║")
-            
-                # report([time.ctime() + " Reading hash table " + dbasename])
+                report([time.ctime() + " Reading hash table " + dbasename])
             hash_tab = hash_table.HashTable(dbasename)
             if analyzer and 'samplerate' in hash_tab.params \
                     and hash_tab.params['samplerate'] != analyzer.target_sr:
@@ -489,15 +489,14 @@ def main(argv):
         do_cmd(cmd, analyzer, hash_tab, filename_iter,
                matcher, args['--precompdir'], precomp_type, report,
                skip_existing=args['--skip-existing'],
-               strip_prefix=args['--wavdir'])
+               strip_prefix=args['--wavdir'], dbasename=dbasename)
 
     elapsedtime = time_clock() - initticks
     if analyzer and analyzer.soundfiletotaldur > 0.:
-        pass
-        # print("Processed "
-        #       + "%d files (%.1f s total dur) in %.1f s sec = %.3f x RT"
-        #       % (analyzer.soundfilecount, analyzer.soundfiletotaldur,
-        #          elapsedtime, (elapsedtime / analyzer.soundfiletotaldur)))
+        print("Processed "
+              + "%d files (%.1f s total dur) in %.1f s sec = %.3f x RT"
+              % (analyzer.soundfilecount, analyzer.soundfiletotaldur,
+                 elapsedtime, (elapsedtime / analyzer.soundfiletotaldur)))
 
     # Save the hash table file if it has been modified
     if hash_tab and hash_tab.dirty:
