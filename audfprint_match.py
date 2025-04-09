@@ -99,7 +99,7 @@ class MatcherResult(object):
         self.dbasename_filename = dbasename_filename
         self.track = track
         self.track_filename = os.path.basename(track)
-        self.timecode = timecode
+        self.timecode = round(timecode, 2)
         self.hashcommon = hashcommon
         self.hashcommonStr = hashcommon
         self.hashtotal = hashtotal

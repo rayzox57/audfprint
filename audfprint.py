@@ -356,7 +356,6 @@ databases to create a new one.
 Usage: audfprint (new | add | match | precompute | merge | newmerge | list | remove) [options] [<file>]...
 
 Options:
-  -colab, --colab                 Only print messages for Colab [Only for match method]
   -d <dbase>, --dbase <dbase>     Fingerprint database file
   -n <dens>, --density <dens>     Target hashes per second [default: 20.0]
   -h <bits>, --hashbits <bits>    How many bits in each hash [default: 20]
