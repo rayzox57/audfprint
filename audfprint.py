@@ -454,8 +454,8 @@ def main(argv):
             if args['--verbose']:
                 if not args['--colab']:
                     report([time.ctime() + " Reading hash table " + dbasename])
-                hash_tab = hash_table.HashTable(
-                    dbasename, quiet=args['--colab'])
+            hash_tab = hash_table.HashTable(
+                dbasename, quiet=args['--colab'])
             if analyzer and 'samplerate' in hash_tab.params \
                     and hash_tab.params['samplerate'] != analyzer.target_sr:
                 # analyzer.target_sr = hash_tab.params['samplerate']
