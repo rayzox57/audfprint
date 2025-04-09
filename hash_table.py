@@ -56,10 +56,10 @@ class HashTable(object):
        >>> list_of_ids_tracks = ht.get_hits(hash)
     """
 
-    def __init__(self, filename=None, hashbits=20, depth=100, maxtime=16384, quiet=False):
+    def __init__(self, filename=None, hashbits=20, depth=100, maxtime=16384):
         """ allocate an empty hash table of the specified size """
         if filename is not None:
-            self.load(filename, quiet)
+            self.load(filename)
         else:
             self.hashbits = hashbits
             self.depth = depth
@@ -196,7 +196,7 @@ class HashTable(object):
               "files (", nhashes, "hashes) to", name,
               "(%.2f%% dropped)" % (100.0 * dropped / max(1, nhashes)))
 
-    def load(self, name, quiet=False):
+    def load(self, name):
         """ Read either pklz or mat-format hash table file """
         ext = os.path.splitext(name)[1]
         if ext == '.mat':
@@ -206,9 +206,9 @@ class HashTable(object):
         nhashes = sum(self.counts)
         # Report the proportion of dropped hashes (overfull table)
         dropped = nhashes - sum(np.minimum(self.depth, self.counts))
-        print("Read fprints for", sum(n is not None for n in self.names),
-              "files (", nhashes, "hashes) from", name,
-              "(%.2f%% dropped)" % (100.0 * dropped / max(1, nhashes)))
+        # print("Read fprints for", sum(n is not None for n in self.names),
+        #       "files (", nhashes, "hashes) from", name,
+        #       "(%.2f%% dropped)" % (100.0 * dropped / max(1, nhashes)))
 
     def load_pkl(self, name, file_object=None):
         """ Read hash table values from pickle file <name>. """
