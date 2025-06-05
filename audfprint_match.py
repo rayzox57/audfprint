@@ -8,6 +8,7 @@ Fingerprint matching code for audfprint
 """
 from __future__ import division, print_function
 import base64
+from collections import defaultdict
 import os
 import time
 
@@ -186,6 +187,61 @@ class MatcherResults(object):
             res += f"{v}\n"
 
         return res
+
+    def pretty_print(self):
+
+        groups = defaultdict(list)
+
+        for res in self.results.values():
+            if os.path.basename(res.match) != os.path.basename(res.dbasename_filename):
+                groups[res.dbasename_filename].append(res)
+
+        # Trier les groupes par leur meilleur score (descendant)
+        sorted_groups = sorted(
+            groups.items(),
+            key=lambda item: max((r.percent for r in item[1]), default=0),
+            reverse=True
+        )
+
+        lines = []
+
+        for dbasename, results in sorted_groups:
+            # Générer titre formaté
+            title = os.path.splitext(os.path.basename(dbasename))[
+                0].replace("_", " ").title()
+            identifier = base64.b64encode(dbasename.encode()).decode()[:10]
+            lines.append(f"\t- Unidentified Song ({title}) [{identifier}] :\n")
+
+            # Grouper par fichier track source
+            tracks = defaultdict(list)
+            for r in results:
+                tracks[r.track_filename].append(r)
+
+            # Trier les fichiers track par leur meilleur score
+            sorted_tracks = sorted(
+                tracks.items(),
+                key=lambda item: max(r.percent for r in item[1]),
+                reverse=True
+            )
+
+            for track_file, matches in sorted_tracks:
+                match_example = matches[0]
+                lines.append(
+                    f"\t\t- {track_file} [ {match_example.match_filename} ] :")
+
+                # Trier les matches de ce fichier source
+                matches.sort(key=lambda r: r.percent, reverse=True)
+
+                for r in matches:
+                    percent_str = f"{r.percent:>5.2f}%"
+                    count_str = f"{r.count:>2}x"
+                    hash_str = f"{r.hashcommon:03d} / {r.hashtotal:04d}"
+                    rank_str = f"{r.rank:>2}"
+                    timecode_str = f"{r.timecode:+.2f}"
+                    lines.append(
+                        f"\t\t\t-  {percent_str} | {count_str} | {hash_str} | {rank_str} | {timecode_str}")
+
+        return "\n".join(lines)
 
 
 class Matcher(object):
