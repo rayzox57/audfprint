@@ -172,8 +172,7 @@ def do_cmd(cmd, analyzer, hash_tab, filename_iter, matcher, outdir, type, report
                 analyzer, hash_tab, filename, num, dbasename=dbasename)
             # show results
             results: audfprint_match.MatcherResults = matcher.results
-
-            print(results.pretty_print())
+            print(f"\n{str(results)}")
 
     elif cmd == 'new' or cmd == 'add':
         # Adding files
