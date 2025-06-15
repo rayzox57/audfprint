@@ -44,13 +44,14 @@ except ImportError:
 
 HAVE_FFMPEG = True
 
+
 def wavread(filename):
-  """Read in audio data from a wav file.  Return d, sr."""
-  # Read in wav file.
-  samplerate, wave_data = wav.read(filename)
-  # Normalize short ints to floats in range [-1..1).
-  data = np.asfarray(wave_data) / 32768.0
-  return data, samplerate
+    """Read in audio data from a wav file.  Return d, sr."""
+    # Read in wav file.
+    samplerate, wave_data = wav.read(filename)
+    # Normalize short ints to floats in range [-1..1).
+    data = np.asfarray(wave_data) / 32768.0
+    return data, samplerate
 
 
 def audio_read(filename, sr=None, channels=None):
@@ -202,8 +203,8 @@ class FFmpegAudioFile(object):
             popen_args.extend(['-ar', str(sample_rate)])
         popen_args.append('-')
         self.proc = subprocess.Popen(
-                popen_args,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            popen_args,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
 
         # Start another thread to consume the standard output of the
@@ -246,7 +247,7 @@ class FFmpegAudioFile(object):
                         # Nothing interesting has happened for a while --
                         # FFmpeg is probably hanging.
                         raise ValueError('ffmpeg output: {}'.format(
-                                ''.join(self.stderr_reader.queue.queue)
+                            ''.join(self.stderr_reader.queue.queue)
                         ))
                     else:
                         start_time = end_time
@@ -273,7 +274,8 @@ class FFmpegAudioFile(object):
             if 'no such file' in line:
                 raise IOError('file not found')
             elif 'invalid data found' in line:
-                raise ValueError()
+                if not 'mjpeg' in line:
+                    raise ValueError()
             elif 'duration:' in line:
                 out_parts.append(line)
             elif 'audio:' in line:
@@ -313,15 +315,15 @@ class FFmpegAudioFile(object):
 
         # Duration.
         match = re.search(
-                r'duration: (\d+):(\d+):(\d+).(\d)', s
+            r'duration: (\d+):(\d+):(\d+).(\d)', s
         )
         if match:
             durparts = list(map(int, match.groups()))
             duration = (
-                    durparts[0] * 60 * 60 +
-                    durparts[1] * 60 +
-                    durparts[2] +
-                    float(durparts[3]) / 10
+                durparts[0] * 60 * 60 +
+                durparts[1] * 60 +
+                durparts[2] +
+                float(durparts[3]) / 10
             )
             self.duration = duration
         else:
