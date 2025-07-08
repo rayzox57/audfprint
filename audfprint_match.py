@@ -26,8 +26,6 @@ import audfprint_analyze
 import audio_read
 import stft
 
-from discord_webhook import DiscordWebhook, DiscordEmbed
-
 
 def process_info():
     rss = usrtime = 0
@@ -96,6 +94,10 @@ def find_modes(data, threshold=5, window=0):
 class MatcherResult(object):
 
     def __init__(self, dbasename_filename, track, match, timecode, hashcommon, hashtotal, rank):
+
+        matchname = os.path.basename(match)
+        last_path = os.path.basename(os.path.dirname(match))
+
         self.dbasename_filename = dbasename_filename
         self.track = track
         self.track_filename = os.path.basename(track)
@@ -105,7 +107,8 @@ class MatcherResult(object):
         self.hashtotal = hashtotal
         self.hashtotalStr = hashtotal
         self.match = match
-        self.match_filename = os.path.basename(match)
+        self.match_filename = matchname
+        self.match_folder_fn = f"{last_path}/{matchname}" if last_path else matchname
         self.count = 1
         self.countStr = 1
         self.rank = rank
@@ -119,7 +122,7 @@ class MatcherResult(object):
         self.percentStr = str(self.percent)
 
     def __repr__(self):
-        return f"[ {self.dbasename_filename} ] [ {self.percentStr}% | {self.count}x | {self.hashcommonStr} / {self.hashtotalStr} | {self.rank} | {self.timecode} ] [ {self.track_filename} | {self.match_filename} ]"
+        return f"[ {self.dbasename_filename} ] [ {self.percentStr}% | {self.count}x | {self.hashcommonStr} / {self.hashtotalStr} | {self.rank} | {self.timecode} ] [ {self.track_filename} | {self.match_folder_fn} ]"
 
 
 class MatcherResults(object):
