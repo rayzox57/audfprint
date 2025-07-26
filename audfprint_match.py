@@ -122,7 +122,7 @@ class MatcherResult(object):
         self.percentStr = str(self.percent)
 
     def __repr__(self):
-        return f"[ {self.dbasename_filename} ] [ {self.percentStr}% | {self.count}x | {self.hashcommonStr} / {self.hashtotalStr} | {self.rank} | {self.timecode} ] [ {self.track_filename} | {self.match_folder_fn} ]"
+        return f"[ {self.dbasename_filename} ] [ {self.percentStr}% | {self.count}x | {self.hashcommonStr} / {self.hashtotalStr} | {self.rank} | {self.timecode} ] [ {self.track_filename} | {self.match} ]"
 
 
 class MatcherResults(object):
